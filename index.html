@@ -3,217 +3,109 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bolex Sport News | Ultra Dashboard</title>
-    <script src="/socket.io/socket.io.js"></script>
+    <title>Bolex Sport News | Live GitHub Edition</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/js/all.min.js"></script>
     
     <style>
         :root {
-            --primary: #ef4444;
+            --primary: #ff4757;
             --secondary: #0f172a;
             --accent: #38bdf8;
             --card-bg: #1e293b;
             --text-main: #f1f5f9;
-            --text-muted: #94a3b8;
             --fav-gold: #fbbf24;
         }
 
-        body { 
-            font-family: 'Inter', sans-serif; 
-            margin: 0; 
-            background: var(--secondary); 
-            color: var(--text-main);
-            overflow-x: hidden;
-        }
+        body { font-family: 'Inter', sans-serif; margin: 0; background: var(--secondary); color: var(--text-main); }
 
-        /* --- Header & Navigation --- */
+        /* Navigation */
         header {
-            background: rgba(15, 23, 42, 0.9);
-            backdrop-filter: blur(10px);
+            background: #111827;
             padding: 1rem 5%;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            position: sticky;
-            top: 0;
-            z-index: 1000;
-            border-bottom: 1px solid #334155;
+            border-bottom: 2px solid var(--primary);
         }
 
-        .brand { font-size: 1.5rem; font-weight: 900; letter-spacing: -1px; }
+        .brand { font-size: 1.5rem; font-weight: 900; }
         .brand span { color: var(--primary); }
 
-        .connection-indicator { font-size: 0.8rem; font-weight: bold; display: flex; align-items: center; gap: 8px; }
-        .dot { height: 8px; width: 8px; background: #4ade80; border-radius: 50%; }
+        /* Controls */
+        .controls { padding: 20px 5%; background: #111827; display: flex; flex-wrap: wrap; gap: 10px; }
+        .search-box { flex: 1; min-width: 200px; }
+        .search-box input { width: 90%; padding: 10px; border-radius: 5px; border: none; background: var(--card-bg); color: white; }
 
-        /* --- Control Panel --- */
-        .controls {
-            padding: 20px 5%;
-            display: flex;
-            flex-wrap: wrap;
-            gap: 15px;
-            align-items: center;
-            background: #111827;
-        }
+        .btn { padding: 10px 15px; border: none; border-radius: 5px; background: var(--card-bg); color: white; cursor: pointer; }
+        .btn.active { background: var(--primary); }
 
-        .search-box {
-            flex: 1;
-            min-width: 250px;
-            position: relative;
-        }
+        /* Grid */
+        .container { padding: 20px 5%; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px; }
 
-        .search-box input {
-            width: 100%;
-            padding: 12px 45px;
-            background: var(--card-bg);
-            border: 1px solid #334155;
-            border-radius: 8px;
-            color: white;
-            outline: none;
-        }
-
-        .search-box i { position: absolute; left: 15px; top: 15px; color: var(--text-muted); }
-
-        .filter-group { display: flex; gap: 10px; }
-        .btn {
-            padding: 10px 18px;
-            border-radius: 6px;
-            border: 1px solid #334155;
-            background: var(--card-bg);
-            color: white;
-            cursor: pointer;
-            font-weight: 600;
-            transition: 0.2s;
-        }
-
-        .btn:hover { border-color: var(--accent); }
-        .btn.active { background: var(--primary); border-color: var(--primary); }
-        .btn-fav { color: var(--fav-gold); }
-
-        /* --- Match Grid --- */
-        .container { padding: 30px 5%; min-height: 80vh; }
-        .grid { 
-            display: grid; 
-            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); 
-            gap: 20px; 
-        }
-
-        .card {
-            background: var(--card-bg);
-            border-radius: 12px;
-            padding: 20px;
-            border: 1px solid #334155;
-            transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            position: relative;
-        }
-
-        .card:hover { transform: translateY(-5px); border-color: var(--accent); }
-
-        .match-header { display: flex; justify-content: space-between; margin-bottom: 15px; font-size: 0.75rem; color: var(--text-muted); font-weight: bold; }
+        /* Card Styling */
+        .card { background: var(--card-bg); border-radius: 10px; padding: 20px; border-left: 5px solid var(--accent); }
+        .match-info { margin-bottom: 15px; }
+        .team-name { font-weight: bold; font-size: 1.1rem; display: flex; align-items: center; gap: 8px; cursor: pointer; }
+        .fav-star { color: #475569; transition: 0.3s; }
+        .fav-star.active { color: var(--fav-gold); }
         
-        .team-row { 
-            display: flex; 
-            justify-content: space-between; 
-            align-items: center; 
-            margin: 10px 0;
-            cursor: pointer;
-        }
-
-        .team-info { display: flex; align-items: center; gap: 12px; }
-        .fav-star { color: #475569; transition: 0.2s; }
-        .fav-star.active { color: var(--fav-gold); transform: scale(1.2); }
-
-        .match-footer {
-            margin-top: 15px;
-            padding-top: 15px;
-            border-top: 1px solid #334155;
-            display: flex;
-            justify-content: space-between;
-            font-size: 0.85rem;
-        }
-
-        .live-pulse {
-            color: var(--primary);
-            animation: blink 1.5s infinite;
-        }
-
-        @keyframes blink { 50% { opacity: 0.3; } }
-        
-        /* Skeleton Loader */
-        .skeleton { height: 200px; background: #1e293b; border-radius: 12px; animation: pulse 1.5s infinite; }
-        @keyframes pulse { 50% { background: #334155; } }
-
+        .live-tag { color: var(--primary); font-size: 0.7rem; font-weight: bold; animation: pulse 1.5s infinite; }
+        @keyframes pulse { 50% { opacity: 0.5; } }
     </style>
 </head>
 <body>
 
 <header>
     <div class="brand">BOLEX <span>SPORT NEWS</span></div>
-    <div class="connection-indicator">
-        <div class="dot" id="status-dot"></div>
-        <span id="status-text">CONNECTING</span>
-    </div>
+    <div id="update-timer" style="font-size: 0.8rem; color: var(--accent);">Updating in 60s...</div>
 </header>
 
 <div class="controls">
     <div class="search-box">
-        <i class="fas fa-search"></i>
-        <input type="text" id="searchBar" placeholder="Search teams, leagues, or sports...">
+        <input type="text" id="searchBar" placeholder="Search teams or leagues...">
     </div>
-    
-    <div class="filter-group">
-        <button class="btn active" onclick="setFilter('All')">All</button>
-        <button class="btn" onclick="setFilter('Soccer')">Football</button>
-        <button class="btn" onclick="setFilter('Basketball')">NBA</button>
-        <button class="btn btn-fav" onclick="toggleFavoritesOnly()"><i class="fas fa-star"></i> Favorites</button>
-    </div>
+    <button class="btn active" id="btn-all" onclick="filterSport('All')">All</button>
+    <button class="btn" id="btn-fav" onclick="toggleFavFilter()"><i class="fas fa-star"></i> Favorites</button>
 </div>
 
 <div class="container">
     <div id="feed" class="grid">
-        <div class="skeleton"></div>
-        <div class="skeleton"></div>
-        <div class="skeleton"></div>
+        <p>Loading Live Global Stats...</p>
     </div>
 </div>
 
 <script>
-    const socket = io();
     let allEvents = [];
-    let currentFilter = 'All';
-    let showFavoritesOnly = false;
     let favorites = JSON.parse(localStorage.getItem('bolex_favs')) || [];
+    let currentSport = 'All';
+    let onlyFavs = false;
+    let timeLeft = 60;
 
-    // --- WebSocket Listeners ---
-    socket.on('connect', () => {
-        document.getElementById('status-dot').style.background = '#4ade80';
-        document.getElementById('status-text').innerText = 'LIVE SERVER';
-    });
+    const LEAGUES = ['4328', '4387', '4391', '4370']; // EPL, NBA, NFL, F1
 
-    socket.on('disconnect', () => {
-        document.getElementById('status-dot').style.background = '#ef4444';
-        document.getElementById('status-text').innerText = 'OFFLINE';
-    });
-
-    socket.on('sportsUpdate', (data) => {
-        allEvents = data;
-        render();
-    });
-
-    // --- Business Logic ---
-    function setFilter(sport) {
-        currentFilter = sport;
-        document.querySelectorAll('.btn').forEach(b => b.classList.remove('active'));
-        event.target.classList.add('active');
-        render();
+    async function fetchData() {
+        try {
+            // Using the public test API key "3" for demonstration
+            const requests = LEAGUES.map(id => 
+                fetch(`https://www.thesportsdb.com/api/v1/json/3/eventsnextleague.php?id=${id}`).then(res => res.json())
+            );
+            const results = await Promise.all(requests);
+            allEvents = results.flatMap(r => r.events || []);
+            render();
+            timeLeft = 60;
+        } catch (e) {
+            console.error("API Error");
+        }
     }
 
-    function toggleFavoritesOnly() {
-        showFavoritesOnly = !showFavoritesOnly;
-        event.target.classList.toggle('active');
-        render();
-    }
+    // Timer Logic
+    setInterval(() => {
+        timeLeft--;
+        document.getElementById('update-timer').innerText = `Updating in ${timeLeft}s...`;
+        if (timeLeft <= 0) fetchData();
+    }, 1000);
 
     function toggleFav(team) {
         if (favorites.includes(team)) {
@@ -225,26 +117,28 @@
         render();
     }
 
+    function filterSport(s) {
+        currentSport = s;
+        render();
+    }
+
+    function toggleFavFilter() {
+        onlyFavs = !onlyFavs;
+        document.getElementById('btn-fav').classList.toggle('active');
+        render();
+    }
+
     document.getElementById('searchBar').addEventListener('input', render);
 
-    // --- The Main Render Engine ---
     function render() {
-        const searchTerm = document.getElementById('searchBar').value.toLowerCase();
+        const query = document.getElementById('searchBar').value.toLowerCase();
         const feed = document.getElementById('feed');
         
-        let filtered = allEvents.filter(ev => {
-            const matchesSport = currentFilter === 'All' || ev.strSport === currentFilter;
-            const matchesSearch = ev.strEvent.toLowerCase().includes(searchTerm) || ev.strLeague.toLowerCase().includes(searchTerm);
-            const matchesFav = !showFavoritesOnly || (favorites.includes(ev.strHomeTeam) || favorites.includes(ev.strAwayTeam));
-            return matchesSport && matchesSearch && matchesFav;
+        const filtered = allEvents.filter(ev => {
+            const matchesSearch = ev.strEvent.toLowerCase().includes(query);
+            const matchesFav = !onlyFavs || (favorites.includes(ev.strHomeTeam) || favorites.includes(ev.strAwayTeam));
+            return matchesSearch && matchesFav;
         });
-
-        if (filtered.length === 0) {
-            feed.innerHTML = `<div style="grid-column:1/-1; text-align:center; padding:50px; color:var(--text-muted)">
-                <i class="fas fa-ghost fa-3x"></i><br><br>No matches found in this category.
-            </div>`;
-            return;
-        }
 
         feed.innerHTML = filtered.map(ev => {
             const isHomeFav = favorites.includes(ev.strHomeTeam);
@@ -252,34 +146,26 @@
 
             return `
                 <div class="card">
-                    <div class="match-header">
-                        <span>${ev.strLeague}</span>
-                        <span class="live-pulse">● TRACKING</span>
-                    </div>
-                    
-                    <div class="team-row" onclick="toggleFav('${ev.strHomeTeam}')">
-                        <div class="team-info">
+                    <div class="live-tag">● LIVE TRACKING</div>
+                    <div class="match-info">
+                        <div class="team-name" onclick="toggleFav('${ev.strHomeTeam}')">
                             <i class="fas fa-star fav-star ${isHomeFav ? 'active' : ''}"></i>
-                            <span>${ev.strHomeTeam}</span>
+                            ${ev.strHomeTeam}
                         </div>
-                    </div>
-                    
-                    <div class="team-row" onclick="toggleFav('${ev.strAwayTeam}')">
-                        <div class="team-info">
+                        <div style="margin: 5px 0 5px 25px; color: #64748b;">vs</div>
+                        <div class="team-name" onclick="toggleFav('${ev.strAwayTeam}')">
                             <i class="fas fa-star fav-star ${isAwayFav ? 'active' : ''}"></i>
-                            <span>${ev.strAwayTeam}</span>
+                            ${ev.strAwayTeam}
                         </div>
                     </div>
-
-                    <div class="match-footer">
-                        <div><i class="far fa-calendar-alt"></i> ${ev.dateEvent}</div>
-                        <div><i class="far fa-clock"></i> ${ev.strTime}</div>
-                    </div>
+                    <div style="font-size: 0.8rem; color: var(--accent); font-weight: bold;">${ev.strLeague}</div>
+                    <div style="font-size: 0.75rem; margin-top: 5px; color: #94a3b8;">${ev.dateEvent} | ${ev.strTime}</div>
                 </div>
             `;
         }).join('');
     }
-</script>
 
+    fetchData();
+</script>
 </body>
 </html>
